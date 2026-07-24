@@ -1,4 +1,11 @@
-import React, { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  PropsWithChildren,
+  ReactElement,
+  useContext,
+  useEffect,
+  useState
+} from "react";
 import IAppContext from "../interfaces/IAppContext";
 import IAppSettings from "../interfaces/IAppSettings";
 import IViewStackItem from "../interfaces/IViewStackItem";
@@ -8,14 +15,14 @@ const LS_SETTINGS = "clockit-settings";
 const defaultAppContext: IAppContext = {
   settings: {
     updateInterval: 30000,
-    timeFormat: "hh:mm:ss",
+    timeFormat: "hh:mm:ss"
   },
   setUpdateInterval() {},
   setTimeFormat() {},
   pushView() {
     return Promise.reject("Not implemented");
   },
-  popView() {},
+  popView() {}
 };
 
 const lsAppSettings = localStorage.getItem(LS_SETTINGS);
@@ -26,7 +33,7 @@ if (lsAppSettings) {
     LS_SETTINGS,
     JSON.stringify({
       updateInterval: defaultAppContext.settings.updateInterval,
-      timeFormat: defaultAppContext.settings.timeFormat,
+      timeFormat: defaultAppContext.settings.timeFormat
     })
   );
 }
@@ -34,8 +41,12 @@ if (lsAppSettings) {
 const _AppContext = createContext<IAppContext>(defaultAppContext);
 
 const AppContext = (props: PropsWithChildren) => {
-  const [updateInterval, setUpdateInterval] = useState(defaultAppContext.settings.updateInterval);
-  const [timeFormat, setTimeFormat] = useState(defaultAppContext.settings.timeFormat);
+  const [updateInterval, setUpdateInterval] = useState(
+    defaultAppContext.settings.updateInterval
+  );
+  const [timeFormat, setTimeFormat] = useState(
+    defaultAppContext.settings.timeFormat
+  );
   const [viewStack, setViewStack] = useState<IViewStackItem[]>([]);
 
   useEffect(() => {
@@ -43,12 +54,12 @@ const AppContext = (props: PropsWithChildren) => {
       LS_SETTINGS,
       JSON.stringify({
         updateInterval,
-        timeFormat,
+        timeFormat
       })
     );
   }, [updateInterval, timeFormat]);
 
-  const pushView = async <T,>(component: JSX.Element): Promise<T> => {
+  const pushView = async <T,>(component: ReactElement): Promise<T> => {
     return new Promise((resolver) => {
       setViewStack((prev) => {
         return [...prev, { component, resolver }];
@@ -69,12 +80,12 @@ const AppContext = (props: PropsWithChildren) => {
       value={{
         settings: {
           updateInterval,
-          timeFormat,
+          timeFormat
         },
         setUpdateInterval,
         setTimeFormat,
         pushView,
-        popView,
+        popView
       }}
     >
       {props.children}

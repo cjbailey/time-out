@@ -1,3 +1,5 @@
+import { describe, expect, it } from "vitest";
+
 import Time from "../types/Time";
 
 describe("Time", () => {

@@ -1,5 +1,5 @@
-// @ts-ignore
-import React, { ReactComponent as MenuIcon } from "../icons/menu-icon.svg";
+import React from "react";
+import MenuIcon from "../icons/menu-icon.svg?react";
 import { useAppContext } from "./AppContext";
 import Button from "./Button";
 import Settings from "./Settings";

@@ -24,5 +24,12 @@ export function Deserialise(json: string | null): IWorkListItem[] {
     }
   });
 
-  return obj;
+  if (!Array.isArray(obj)) {
+    return [];
+  }
+
+  return obj.map((item) => ({
+    ...item,
+    folder: (item.folder || "General").trim() || "General",
+  }));
 }

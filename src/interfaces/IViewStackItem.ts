@@ -1,4 +1,6 @@
+import { ReactElement } from "react";
+
 export default interface IViewStackItem {
-  component: JSX.Element;
+  component: ReactElement;
   resolver: (value: any) => void;
 }

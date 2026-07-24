@@ -1,13 +1,21 @@
-import React, { ChangeEvent, DragEvent, KeyboardEvent, useRef, useState } from "react";
+import React, {
+  ChangeEvent,
+  DragEvent,
+  KeyboardEvent,
+  useRef,
+  useState
+} from "react";
 import Time from "../types/Time";
 import { WorkListItemId } from "../types/WorkListItemId";
 import { useAppContext } from "./AppContext";
 import Button from "./Button";
 import DeleteButton from "./DeleteButton";
-import { ReactComponent as GrabHandleIcon } from "../icons/grab-handle.svg";
+import GrabHandleIcon from "../icons/grab-handle.svg?react";
 
 interface IProps {
   id?: WorkListItemId;
+  folder?: string;
+  folders?: string[];
   title?: string;
   startTime?: Time;
   lastStartTime?: Time;
@@ -16,11 +24,13 @@ interface IProps {
   onCreateWorkItem?: (title: string) => void;
   onUpdateWorkItem?: (
     id: WorkListItemId,
+    folder: string,
     title: string,
     startTime: Time,
     lastStartTime: Time,
     elapsedTime: Time
   ) => void;
+  onMoveWorkItem?: (id: WorkListItemId, folder: string) => void;
   onDeleteWorkItem?: (id: WorkListItemId) => void;
   onStartItemTimer?: (id: WorkListItemId) => void;
   onDragStart?: (id: WorkListItemId) => void;
@@ -31,6 +41,8 @@ interface IProps {
 
 export default function WorkItem({
   id,
+  folder,
+  folders,
   title = "",
   startTime,
   lastStartTime,
@@ -38,27 +50,51 @@ export default function WorkItem({
   disabled = false,
   onCreateWorkItem,
   onUpdateWorkItem,
+  onMoveWorkItem,
   onDeleteWorkItem,
   onStartItemTimer,
   onDragStart,
   onDragEnd,
   onDragEnter,
-  onEditTime,
+  onEditTime
 }: IProps) {
   const { settings } = useAppContext();
   const [_title, setTitle] = useState(title);
   const workItemRef = useRef(null);
 
   const timeFormatStyle = {
-    "--format": `"${settings.timeFormat}"`,
+    "--format": `"${settings.timeFormat}"`
   };
 
   const titleInput = (ev: ChangeEvent<HTMLInputElement>) => {
     const title: string = ev.currentTarget.value || "";
     setTitle(title);
 
-    if (onUpdateWorkItem && id && title && startTime && lastStartTime && elapsedTime)
-      onUpdateWorkItem(id, title, startTime, lastStartTime, elapsedTime);
+    if (
+      onUpdateWorkItem &&
+      id &&
+      folder &&
+      title &&
+      startTime &&
+      lastStartTime &&
+      elapsedTime
+    )
+      onUpdateWorkItem(
+        id,
+        folder,
+        title,
+        startTime,
+        lastStartTime,
+        elapsedTime
+      );
+  };
+
+  const moveItemToFolder = (id: WorkListItemId | undefined, folder: string) => {
+    if (id === undefined || !onMoveWorkItem) {
+      return;
+    }
+
+    onMoveWorkItem(id, folder);
   };
 
   const keyUp = (ev: KeyboardEvent<HTMLInputElement>) => {
@@ -161,10 +197,34 @@ export default function WorkItem({
         <div></div>
       )}
       <div className="title">
-        <input onChange={titleInput} onKeyUp={keyUp} value={_title} placeholder={!id ? "Type something here" : ""} />
+        <input
+          onChange={titleInput}
+          onKeyUp={keyUp}
+          value={_title}
+          placeholder={!id ? "Type something here" : ""}
+        />
+      </div>
+      <div className="project">
+        {id !== undefined && folders && folders.length > 0 && (
+          <select
+            className="project-select"
+            value={folder || ""}
+            onChange={(ev) => moveItemToFolder(id, ev.currentTarget.value)}
+          >
+            {folders.map((projectFolder) => (
+              <option key={projectFolder} value={projectFolder}>
+                {projectFolder}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
       {startTime ? (
-        <div className="start-time time-hdr" style={timeFormatStyle as any} onDoubleClick={() => editTime(id)}>
+        <div
+          className="start-time time-hdr"
+          style={timeFormatStyle as any}
+          onDoubleClick={() => editTime(id)}
+        >
           {startTime.toString(settings.timeFormat)}
         </div>
       ) : (
@@ -172,7 +232,10 @@ export default function WorkItem({
       )}
 
       {lastStartTime ? (
-        <div className="last-start-time time-hdr" style={timeFormatStyle as any}>
+        <div
+          className="last-start-time time-hdr"
+          style={timeFormatStyle as any}
+        >
           {lastStartTime.toString(settings.timeFormat)}
         </div>
       ) : (
@@ -180,7 +243,11 @@ export default function WorkItem({
       )}
 
       {elapsedTime ? (
-        <div className="elapsed-time time-hdr" style={timeFormatStyle as any} onDoubleClick={() => editTime(id)}>
+        <div
+          className="elapsed-time time-hdr"
+          style={timeFormatStyle as any}
+          onDoubleClick={() => editTime(id)}
+        >
           {elapsedTime?.toString(settings.timeFormat)}
         </div>
       ) : (
