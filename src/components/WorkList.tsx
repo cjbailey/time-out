@@ -1,4 +1,11 @@
-import React, { Dispatch, useState } from "react";
+import React, {
+  ChangeEvent,
+  Dispatch,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import IWorkListItemAction from "../interfaces/IWorkListAction";
 import IWorkListItem from "../interfaces/IWorkListItem";
 import Time from "../types/Time";
@@ -21,6 +28,9 @@ interface IActiveTimer {
   timer: TimerAction;
 }
 
+const DEFAULT_FOLDER = "General";
+const LS_FOLDERS = "my-work-list-folders";
+
 const CONFIRM_RESET_ALL_DIALOG = (
   <ConfirmDialog
     message="Are you sure you want to delete all items?"
@@ -40,11 +50,20 @@ const CONFIRM_RESET_TIMES_DIALOG = (
 );
 
 const CONFIRM_DELETE_DIALOG = (
-  <ConfirmDialog message="Delete the item?" acceptText="Yes" cancelText="No" className="warning" />
+  <ConfirmDialog
+    message="Delete the item?"
+    acceptText="Yes"
+    cancelText="No"
+    className="warning"
+  />
 );
 
 const EDIT_TIME_OF_ACTIVE_TIMER_NOT_ALLOWED_DIALOG = (
-  <ConfirmDialog message="Editing the time of an active timer is not allowed." acceptText="OK" className="error" />
+  <ConfirmDialog
+    message="Editing the time of an active timer is not allowed."
+    acceptText="OK"
+    className="error"
+  />
 );
 
 export default function WorkList({ items, workItemDispatcher }: IProps) {
@@ -52,21 +71,100 @@ export default function WorkList({ items, workItemDispatcher }: IProps) {
   const [activeTimer, setActiveTimer] = useState<IActiveTimer | null>(null);
   const [dragSource, setDragSource] = useState<WorkListItemId | null>(null);
   const [dragTarget, setDragTarget] = useState<WorkListItemId | null>(null);
+  const [activeFolder, setActiveFolder] = useState<string>(DEFAULT_FOLDER);
+  const [newFolder, setNewFolder] = useState<string>("");
+  const itemsRef = useRef<IWorkListItem[]>(items);
+  const [customFolders, setCustomFolders] = useState<string[]>(() => {
+    const ls = localStorage.getItem(LS_FOLDERS);
+    if (!ls) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(ls);
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      return parsed
+        .map((x) => `${x}`.trim())
+        .filter((x) => !!x && x !== DEFAULT_FOLDER);
+    } catch {
+      return [];
+    }
+  });
 
   const appContext = useAppContext();
 
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  const folders = useMemo(() => {
+    const uniq = Array.from(
+      new Set([
+        ...customFolders,
+        ...items.map((x) => x.folder || DEFAULT_FOLDER)
+      ])
+    );
+
+    if (!uniq.includes(DEFAULT_FOLDER)) {
+      uniq.unshift(DEFAULT_FOLDER);
+    }
+
+    return uniq.sort((a, b) => a.localeCompare(b));
+  }, [items, customFolders]);
+
+  useEffect(() => {
+    localStorage.setItem(LS_FOLDERS, JSON.stringify(customFolders));
+  }, [customFolders]);
+
+  const visibleItems = useMemo(() => {
+    return items.filter(
+      (item) => (item.folder || DEFAULT_FOLDER) === activeFolder
+    );
+  }, [items, activeFolder]);
+
+  useEffect(() => {
+    if (!folders.includes(activeFolder)) {
+      setActiveFolder(DEFAULT_FOLDER);
+    }
+  }, [folders, activeFolder]);
+
+  const addFolder = () => {
+    const folderName = newFolder.trim();
+    if (!folderName) {
+      return;
+    }
+
+    const alreadyExists = folders.some(
+      (folder) => folder.toLowerCase() === folderName.toLowerCase()
+    );
+
+    if (!alreadyExists && folderName !== DEFAULT_FOLDER) {
+      setCustomFolders((prev) => [...prev, folderName]);
+    }
+
+    setActiveFolder(folderName);
+    setNewFolder("");
+  };
+
   const addItem = (title: string) => {
-    const lastIdx = items.reduce<WorkListItemId>((prev, curr) => (curr.id > prev ? curr.id : prev), 0);
+    const lastIdx = items.reduce<WorkListItemId>(
+      (prev, curr) => (curr.id > prev ? curr.id : prev),
+      0
+    );
 
     workItemDispatcher({
       type: WorkListActionType.Create,
       value: {
         id: lastIdx + 1,
+        folder: activeFolder,
         title: title,
         startTime: new Time(),
         lastStartTime: new Time(),
-        elapsedTime: new Time(),
-      },
+        elapsedTime: new Time()
+      }
     });
   };
 
@@ -76,7 +174,7 @@ export default function WorkList({ items, workItemDispatcher }: IProps) {
 
     workItemDispatcher({
       type: WorkListActionType.Delete,
-      value: id,
+      value: id
     });
 
     if (activeTimer && activeTimer.id === id) {
@@ -85,26 +183,57 @@ export default function WorkList({ items, workItemDispatcher }: IProps) {
     }
   };
 
-  const updateItem = (id: WorkListItemId, title: string, startTime: Time, lastStartTime: Time, elapsedTime: Time) => {
+  const updateItem = (
+    id: WorkListItemId,
+    folder: string,
+    title: string,
+    startTime: Time,
+    lastStartTime: Time,
+    elapsedTime: Time
+  ) => {
     workItemDispatcher({
       type: WorkListActionType.Update,
       value: {
         id,
+        folder,
         title,
         startTime,
         lastStartTime,
-        elapsedTime,
-      },
+        elapsedTime
+      }
     });
   };
 
+  const moveItemToFolder = (id: WorkListItemId, folder: string) => {
+    const item = items.find((x) => x.id === id);
+    if (!item) {
+      return;
+    }
+
+    updateItem(
+      id,
+      folder,
+      item.title,
+      item.startTime,
+      item.lastStartTime,
+      item.elapsedTime
+    );
+  };
+
   const startItemTimer = (item: IWorkListItem, resume = false) => {
+    const itemToStart = { ...item };
+
     if (!resume) {
-      if (item.startTime.timeInMilliseconds === 0) {
-        item.startTime = Time.now();
+      if (itemToStart.startTime.timeInMilliseconds === 0) {
+        itemToStart.startTime = Time.now();
       }
 
-      item.lastStartTime = Time.now();
+      itemToStart.lastStartTime = Time.now();
+
+      workItemDispatcher({
+        type: WorkListActionType.Update,
+        value: itemToStart
+      });
     }
 
     if (activeTimer) {
@@ -112,29 +241,38 @@ export default function WorkList({ items, workItemDispatcher }: IProps) {
     }
 
     const timer = new TimerAction(
-      item.elapsedTime,
-      item.lastStartTime,
+      itemToStart.elapsedTime,
+      itemToStart.lastStartTime,
       (currentElapsedTime) => {
+        const latestItem = itemsRef.current.find(
+          (x) => x.id === itemToStart.id
+        );
+        if (!latestItem) {
+          return;
+        }
+
         workItemDispatcher({
           type: WorkListActionType.Update,
-          value: { ...item, elapsedTime: currentElapsedTime },
+          value: { ...latestItem, elapsedTime: currentElapsedTime }
         });
       },
       appContext.settings.updateInterval
     );
 
     timer.start();
-    setActiveTimer({ id: item.id, timer });
+    setActiveTimer({ id: itemToStart.id, timer });
   };
 
   const resetAll = async () => {
-    const confirm = await appContext.pushView<boolean>(CONFIRM_RESET_ALL_DIALOG);
+    const confirm = await appContext.pushView<boolean>(
+      CONFIRM_RESET_ALL_DIALOG
+    );
     if (!confirm) {
       return;
     }
 
     workItemDispatcher({
-      type: WorkListActionType.Reset,
+      type: WorkListActionType.Reset
     });
 
     if (activeTimer) {
@@ -144,13 +282,15 @@ export default function WorkList({ items, workItemDispatcher }: IProps) {
   };
 
   const resetTimes = async () => {
-    const confirm = await appContext.pushView<boolean>(CONFIRM_RESET_TIMES_DIALOG);
+    const confirm = await appContext.pushView<boolean>(
+      CONFIRM_RESET_TIMES_DIALOG
+    );
     if (!confirm) {
       return;
     }
 
     workItemDispatcher({
-      type: WorkListActionType.ResetTimes,
+      type: WorkListActionType.ResetTimes
     });
 
     if (activeTimer) {
@@ -177,12 +317,12 @@ export default function WorkList({ items, workItemDispatcher }: IProps) {
 
         workItemDispatcher({
           type: WorkListActionType.Update,
-          value: sourceItem,
+          value: sourceItem
         });
 
         workItemDispatcher({
           type: WorkListActionType.Update,
-          value: targetItem,
+          value: targetItem
         });
       }
     }
@@ -206,12 +346,19 @@ export default function WorkList({ items, workItemDispatcher }: IProps) {
     const elapsedTime = item.elapsedTime;
 
     if (id === activeTimer?.id) {
-      await appContext.pushView<boolean>(EDIT_TIME_OF_ACTIVE_TIMER_NOT_ALLOWED_DIALOG);
+      await appContext.pushView<boolean>(
+        EDIT_TIME_OF_ACTIVE_TIMER_NOT_ALLOWED_DIALOG
+      );
       return;
     }
 
-    const view = <EditTimeDialog startTime={startTime} elapsedTime={elapsedTime} />;
-    const viewResult = await appContext.pushView<{ startTime: Time; elapsedTime: Time }>(view);
+    const view = (
+      <EditTimeDialog startTime={startTime} elapsedTime={elapsedTime} />
+    );
+    const viewResult = await appContext.pushView<{
+      startTime: Time;
+      elapsedTime: Time;
+    }>(view);
 
     if (viewResult) {
       // const diff = viewResult.startTime.sub(startTime);
@@ -220,23 +367,35 @@ export default function WorkList({ items, workItemDispatcher }: IProps) {
       //   return;
       // }
 
-      updateItem(id, item.title, viewResult.startTime, lastStartTime, viewResult.elapsedTime);
+      updateItem(
+        id,
+        item.folder,
+        item.title,
+        viewResult.startTime,
+        lastStartTime,
+        viewResult.elapsedTime
+      );
     }
   };
 
   const renderWorkItems = () => {
-    return items.map((x) => (
+    return visibleItems.map((x) => (
       <WorkItem
         key={x.id}
         id={x.id}
+        folder={x.folder}
+        folders={folders}
         title={x.title}
         startTime={x.startTime}
         lastStartTime={x.lastStartTime}
         elapsedTime={x.elapsedTime}
         disabled={activeTimer?.id === x.id}
         onDeleteWorkItem={deleteItem}
-        onStartItemTimer={(id) => startItemTimer(items.filter((x) => x.id === id)[0])}
+        onStartItemTimer={(id) =>
+          startItemTimer(items.filter((x) => x.id === id)[0])
+        }
         onUpdateWorkItem={updateItem}
+        onMoveWorkItem={moveItemToFolder}
         onDragStart={dragItemStart}
         onDragEnd={dragItemEnd}
         onDragEnter={dragItemEnter}
@@ -245,37 +404,83 @@ export default function WorkList({ items, workItemDispatcher }: IProps) {
     ));
   };
 
-  const renderTotalLine = () => {
-    const total = items.reduce((prev, curr) => prev.add(curr.elapsedTime), Time.zero());
+  const renderTotalElapsed = () => {
+    const total = items.reduce(
+      (prev, curr) => prev.add(curr.elapsedTime),
+      Time.zero()
+    );
 
     return (
-      <div className="work-item total">
-        <div className="handle"></div>
-        <div className="delete"></div>
-        <div className="title">Total</div>
-        <div className="start-time"></div>
-        <div className="last-start-time"></div>
-        <div className="elapsed-time">{total.toString(settings.timeFormat)}</div>
+      <div className="work-list-total">
+        <span className="label">Total Elapsed</span>
+        <span className="value">{total.toString(settings.timeFormat)}</span>
       </div>
     );
   };
 
+  const onFolderNameChange = (ev: ChangeEvent<HTMLInputElement>) => {
+    setNewFolder(ev.currentTarget.value);
+  };
+
+  const onFolderNameKeyUp = (ev: React.KeyboardEvent<HTMLInputElement>) => {
+    if (ev.key === "Enter") {
+      addFolder();
+    }
+  };
+
   return (
     <div className="work-list">
-      <div className="work-list-items">
-        <div className="work-item header">
-          <div className="handle"></div>
-          <div className="delete"></div>
-          <div className="title"></div>
-          <div className="start-time">Start Time</div>
-          <div className="last-start-time">Last Start Time</div>
-          <div className="elapsed-time">Elapsed</div>
+      {renderTotalElapsed()}
+
+      <div className="tabs-container">
+        <div className="tabs-header">
+          <div className="tabs-list">
+            {folders.map((folder) => (
+              <Button
+                key={folder}
+                className={`tab-btn ${folder === activeFolder ? "active" : ""}`}
+                onClick={() => setActiveFolder(folder)}
+              >
+                {folder}
+              </Button>
+            ))}
+          </div>
+          <div className="tabs-create">
+            <input
+              value={newFolder}
+              onChange={onFolderNameChange}
+              onKeyUp={onFolderNameKeyUp}
+              placeholder="New folder"
+            />
+            <Button onClick={addFolder}>Add Folder</Button>
+          </div>
         </div>
-        {renderTotalLine()}
-        {renderWorkItems()}
-        {/* new item */}
-        <WorkItem onCreateWorkItem={addItem} />
+
+        <div className="work-list-items">
+          <div className="work-item header">
+            <div className="handle"></div>
+            <div className="delete"></div>
+            <div className="title"></div>
+            <div className="folder">Folder</div>
+            <div className="start-time">
+              <div>Start Time</div>
+              <div className="time-format-label">{settings.timeFormat}</div>
+            </div>
+            <div className="last-start-time">
+              <div>Last Start Time</div>
+              <div className="time-format-label">{settings.timeFormat}</div>
+            </div>
+            <div className="elapsed-time">
+              <div>Elapsed</div>
+              <div className="time-format-label">{settings.timeFormat}</div>
+            </div>
+          </div>
+          {renderWorkItems()}
+          {/* new item */}
+          <WorkItem onCreateWorkItem={addItem} />
+        </div>
       </div>
+
       <div className="work-list-actions">
         <Button onClick={resetAll}>Delete All</Button>
         <Button onClick={resetTimes}>Reset Times</Button>

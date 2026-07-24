@@ -194,11 +194,112 @@ body {
 }
 
 .work-list {
-  .work-list-items {
-    border: 1px solid $Color-theme-2-hex;
-    border-radius: 3px;
-    padding: 10px;
+  .work-list-total {
     margin: 10px;
+    padding: 10px 14px;
+    border: 1px solid $Color-theme-4-hex;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #0a3a4088;
+
+    .label {
+      color: $Color-theme-4-hex;
+      font-size: 12pt;
+      font-style: italic;
+    }
+
+    .value {
+      font-weight: bold;
+    }
+  }
+
+  .tabs-container {
+    border: 1px solid #21636a;
+    border-radius: 10px;
+    margin: 10px;
+    padding: 12px;
+    background: linear-gradient(180deg, #0a3a40a8 0%, #072f33a8 100%);
+    box-shadow: inset 0 1px 0 #2a707940;
+  }
+
+  .tabs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+
+    .tabs-list {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      background: #04232699;
+      border: 1px solid #1e5960;
+      border-radius: 999px;
+      padding: 4px;
+
+      .tab-btn {
+        background-color: transparent;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        color: #b2d3d3;
+        font-size: 10pt;
+        padding: 7px 14px;
+        transition:
+          background-color 120ms ease,
+          color 120ms ease,
+          border-color 120ms ease;
+
+        &:hover,
+        &:focus-visible {
+          background-color: #14515a;
+          border-color: #2e7780;
+          color: #e2f2f2;
+          animation: none;
+        }
+
+        &.active {
+          background-color: #def7f6;
+          color: #06363b;
+          border-color: #def7f6;
+          font-weight: bold;
+          box-shadow: 0 1px 0 #ffffff66;
+        }
+      }
+    }
+
+    .tabs-create {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #04232699;
+      border: 1px solid #1e5960;
+      border-radius: 999px;
+      padding: 4px;
+
+      input {
+        width: 200px;
+        font-size: 11pt;
+        border: none;
+        padding: 8px 12px;
+      }
+
+      .button {
+        margin: 0;
+        padding: 7px 14px;
+        border-radius: 999px;
+        font-size: 10pt;
+      }
+    }
+  }
+
+  .work-list-items {
+    padding: 0;
+    margin: 0;
     display: table;
     width: -webkit-fill-available;
 
@@ -210,6 +311,13 @@ body {
         color: $Color-theme-4-hex;
         font-style: italic;
         font-size: 12pt;
+
+        .time-format-label {
+          font-size: 8pt;
+          line-height: 1.1;
+          margin-top: 2px;
+          opacity: 0.9;
+        }
       }
 
       & > div {
@@ -247,17 +355,38 @@ body {
         text-align: left;
       }
 
-      .time-hdr:before {
-        content: var(--format);
-        font-size: 8pt;
-        color: $Color-theme-4-hex;
-        position: absolute;
-        top: -3px;
+      .folder {
+        width: 180px;
+        text-align: left;
+
+        .folder-select {
+          width: 100%;
+          background-color: transparent;
+          border: 1px solid $Color-theme-3-hex;
+          border-radius: 4px;
+          color: white;
+          font-size: 10pt;
+          padding: 2px 4px;
+
+          option {
+            background-color: $Color-theme-2-hex;
+          }
+        }
       }
     }
   }
 
   @media (orientation: portrait) and (max-width: 700px) {
+    .tabs-header {
+      .tabs-create {
+        width: 100%;
+
+        input {
+          width: calc(100% - 120px);
+        }
+      }
+    }
+
     .work-list-items {
       display: flex;
       flex-direction: column;
@@ -276,7 +405,8 @@ body {
 
         &.header {
           .delete,
-          .title {
+          .title,
+          .folder {
             display: none;
           }
         }
@@ -297,6 +427,13 @@ body {
 
         .last-start-time {
           display: none;
+        }
+
+        .folder {
+          display: block;
+          margin-left: 50px;
+          margin-bottom: 8px;
+          width: calc(100% - 90px);
         }
       }
     }

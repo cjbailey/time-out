@@ -30,6 +30,6 @@ export function Deserialise(json: string | null): IWorkListItem[] {
 
   return obj.map((item) => ({
     ...item,
-    folder: (item.folder || "General").trim() || "General",
+    folder: (item.folder || "General").trim() || "General"
   }));
 }

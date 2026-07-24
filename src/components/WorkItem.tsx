@@ -62,10 +62,6 @@ export default function WorkItem({
   const [_title, setTitle] = useState(title);
   const workItemRef = useRef(null);
 
-  const timeFormatStyle = {
-    "--format": `"${settings.timeFormat}"`
-  };
-
   const titleInput = (ev: ChangeEvent<HTMLInputElement>) => {
     const title: string = ev.currentTarget.value || "";
     setTitle(title);
@@ -204,27 +200,23 @@ export default function WorkItem({
           placeholder={!id ? "Type something here" : ""}
         />
       </div>
-      <div className="project">
+      <div className="folder">
         {id !== undefined && folders && folders.length > 0 && (
           <select
-            className="project-select"
+            className="folder-select"
             value={folder || ""}
             onChange={(ev) => moveItemToFolder(id, ev.currentTarget.value)}
           >
-            {folders.map((projectFolder) => (
-              <option key={projectFolder} value={projectFolder}>
-                {projectFolder}
+            {folders.map((folder) => (
+              <option key={folder} value={folder}>
+                {folder}
               </option>
             ))}
           </select>
         )}
       </div>
       {startTime ? (
-        <div
-          className="start-time time-hdr"
-          style={timeFormatStyle as any}
-          onDoubleClick={() => editTime(id)}
-        >
+        <div className="start-time" onDoubleClick={() => editTime(id)}>
           {startTime.toString(settings.timeFormat)}
         </div>
       ) : (
@@ -232,10 +224,7 @@ export default function WorkItem({
       )}
 
       {lastStartTime ? (
-        <div
-          className="last-start-time time-hdr"
-          style={timeFormatStyle as any}
-        >
+        <div className="last-start-time">
           {lastStartTime.toString(settings.timeFormat)}
         </div>
       ) : (
@@ -243,11 +232,7 @@ export default function WorkItem({
       )}
 
       {elapsedTime ? (
-        <div
-          className="elapsed-time time-hdr"
-          style={timeFormatStyle as any}
-          onDoubleClick={() => editTime(id)}
-        >
+        <div className="elapsed-time" onDoubleClick={() => editTime(id)}>
           {elapsedTime?.toString(settings.timeFormat)}
         </div>
       ) : (
