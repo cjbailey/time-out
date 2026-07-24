@@ -100,6 +100,18 @@ export default function WorkList({ items, workItemDispatcher }: IProps) {
     itemsRef.current = items;
   }, [items]);
 
+  useEffect(() => {
+    if (!activeTimer) {
+      return;
+    }
+
+    const activeItemExists = items.some((x) => x.id === activeTimer.id);
+    if (!activeItemExists) {
+      activeTimer.timer.stop();
+      setActiveTimer(null);
+    }
+  }, [items, activeTimer]);
+
   const folders = useMemo(() => {
     const uniq = Array.from(
       new Set([

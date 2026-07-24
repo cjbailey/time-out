@@ -29,7 +29,7 @@ export default function App() {
 
   return (
     <div className="App">
-      <Menu />
+      <Menu workItems={workItems} workItemDispatcher={workItemDispatcher} />
       <WorkList items={workItems} workItemDispatcher={workItemDispatcher} />
       {/* {appContext.settingsShown && <Settings />} */}
     </div>

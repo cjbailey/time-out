@@ -6,13 +6,12 @@ import Time from "./types/Time";
 
 export function workItemsReducer(state: IWorkListItem[], action: IWorkListAction): IWorkListItem[] {
   let newState: IWorkListItem[];
-  const workListItem = action.value as IWorkListItem;
 
   switch (action.type) {
     case WorkListActionType.Create:
       if (!action.value) return state;
 
-      newState = [...state, workListItem];
+      newState = [...state, action.value as IWorkListItem];
       break;
 
     case WorkListActionType.Delete:
@@ -20,7 +19,7 @@ export function workItemsReducer(state: IWorkListItem[], action: IWorkListAction
       break;
 
     case WorkListActionType.Update:
-      state = workListUpdate(state, workListItem);
+      state = workListUpdate(state, action.value as IWorkListItem);
       newState = [...state];
       break;
 
@@ -35,6 +34,12 @@ export function workItemsReducer(state: IWorkListItem[], action: IWorkListAction
         x.elapsedTime = new Time();
         return x;
       });
+      break;
+
+    case WorkListActionType.Replace:
+      newState = Array.isArray(action.value)
+        ? [...(action.value as IWorkListItem[])]
+        : state;
       break;
 
     default:
