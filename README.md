@@ -1,6 +1,5 @@
 # time-out
-Created with CodeSandbox
 
 A super simple chess-style clock for keeping track of your day.
 
-![2022-10-25](https://user-images.githubusercontent.com/3026800/197878030-206208d3-ebec-4931-8d4f-e4a8dc6ad1fd.png)
+<img width="1653" height="657" alt="image" src="https://github.com/user-attachments/assets/aa9f81d5-4769-46f3-8866-f4c6aac8f5c4" />
