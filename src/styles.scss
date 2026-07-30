@@ -197,6 +197,78 @@ body {
     }
 }
 
+.allocation-report-dialog {
+    .dialog {
+        max-width: 760px;
+        width: calc(100% - 40px);
+    }
+
+    .allocation-report-summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding: 8px 10px;
+        border: 1px solid $Color-theme-4-hex;
+        border-radius: 6px;
+        background-color: #06333999;
+
+        .summary-label {
+            color: $Color-theme-4-hex;
+            font-size: 11pt;
+            font-style: italic;
+        }
+
+        .summary-value {
+            font-weight: bold;
+            font-size: 12pt;
+        }
+    }
+
+    .allocation-report-table-wrap {
+        max-height: 45vh;
+        overflow: auto;
+        border: 1px solid #1f5f66;
+        border-radius: 6px;
+        background-color: #04232688;
+    }
+
+    .allocation-report-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10pt;
+
+        th,
+        td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid #1d4f55;
+        }
+
+        th {
+            position: sticky;
+            top: 0;
+            background-color: #0a3a40;
+            color: #9ed0d0;
+            font-style: italic;
+            z-index: 1;
+        }
+
+        td:nth-child(1),
+        td:nth-child(4),
+        td:nth-child(5),
+        td:nth-child(6) {
+            white-space: nowrap;
+        }
+    }
+
+    .allocation-report-actions {
+        margin-top: 14px;
+        display: flex;
+        justify-content: flex-end;
+    }
+}
+
 .edit-start-time-dialog {
     .dialog-input-label {
         width: 120px;
@@ -212,6 +284,7 @@ body {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 10px;
         background-color: #0a3a4088;
 
         .label {
@@ -220,8 +293,20 @@ body {
             font-style: italic;
         }
 
+        .work-list-total-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         .value {
             font-weight: bold;
+        }
+
+        .report-btn {
+            margin: 0;
+            font-size: 9pt;
+            padding: 5px 12px;
         }
     }
 

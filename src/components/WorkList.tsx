@@ -13,6 +13,9 @@ import TimerAction from "../types/TimerAction";
 import { WorkListActionType } from "../types/WorkListActionType";
 import { WorkListItemId } from "../types/WorkListItemId";
 import { useAppContext } from "./AppContext";
+import AllocationReportDialog, {
+  IAllocationReportEntry
+} from "./AllocationReportDialog";
 import Button from "./Button";
 import ConfirmDialog from "./ConfirmDialog";
 import EditTimeDialog from "./EditTimeDialog";
@@ -63,6 +66,13 @@ const EDIT_TIME_OF_ACTIVE_TIMER_NOT_ALLOWED_DIALOG = (
     message="Editing the time of an active timer is not allowed."
     acceptText="OK"
     className="error"
+  />
+);
+
+const NO_ALLOCATED_TIME_DIALOG = (
+  <ConfirmDialog
+    message="There are no entries with allocated time to report."
+    acceptText="OK"
   />
 );
 
@@ -416,6 +426,53 @@ export default function WorkList({ items, workItemDispatcher }: IProps) {
     ));
   };
 
+  const exportAllocationReport = async () => {
+    const allocatedItems = items.filter(
+      (item) => item.elapsedTime.timeInMilliseconds > 0
+    );
+
+    if (allocatedItems.length === 0) {
+      await appContext.pushView<boolean>(NO_ALLOCATED_TIME_DIALOG);
+      return;
+    }
+
+    const totalAllocated = allocatedItems.reduce(
+      (prev, curr) => prev.add(curr.elapsedTime),
+      Time.zero()
+    );
+
+    const reportRows = allocatedItems
+      .map<IAllocationReportEntry>((item) => {
+        const ratio =
+          totalAllocated.timeInMilliseconds > 0
+            ? (item.elapsedTime.timeInMilliseconds /
+              totalAllocated.timeInMilliseconds) *
+            100
+            : 0;
+
+        return {
+          id: item.id,
+          folder: item.folder || DEFAULT_FOLDER,
+          title: item.title,
+          elapsedTime: item.elapsedTime,
+          elapsedDecimalHours: item.elapsedTime.timeInMilliseconds / 3600000,
+          allocationRatio: ratio
+        };
+      })
+      .sort(
+        (a, b) =>
+          b.elapsedTime.timeInMilliseconds - a.elapsedTime.timeInMilliseconds
+      );
+
+    await appContext.pushView(
+      <AllocationReportDialog
+        entries={reportRows}
+        totalAllocated={totalAllocated}
+        timeFormat={settings.timeFormat}
+      />
+    );
+  };
+
   const renderTotalElapsed = () => {
     const total = items.reduce(
       (prev, curr) => prev.add(curr.elapsedTime),
@@ -425,7 +482,12 @@ export default function WorkList({ items, workItemDispatcher }: IProps) {
     return (
       <div className="work-list-total">
         <span className="label">Total Elapsed</span>
-        <span className="value">{total.toString(settings.timeFormat)}</span>
+        <div className="work-list-total-actions">
+          <span className="value">{total.toString(settings.timeFormat)}</span>
+          <Button className="report-btn" onClick={exportAllocationReport}>
+            Generate Report
+          </Button>
+        </div>
       </div>
     );
   };
